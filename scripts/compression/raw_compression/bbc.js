@@ -56,7 +56,14 @@ const uint8ArrayToStrings = (arr) => {
     return strs;
 }
 
-export const bbcCompress = (index) => {
+const to8BitBinaryString = (number) => {
+    // Ensure the number is within a single byte
+    const singleByte = number & 0xFF;
+    // Convert to binary and pad with leading zeros
+    return singleByte.toString(2).padStart(8, '0');
+}
+
+export const bbcCompress = (index, generate_states = false) => {
     const maxRuns = 2**15-1;
     const maxLiterals = 2**4-1;
 
@@ -69,24 +76,45 @@ export const bbcCompress = (index) => {
         inputArray[i/8] = parseInt(byte, 2);
     }
 
+    // Compression variables
     let chunks = [];
     let inRuns = true;
     let numRuns = 0;
     let savedDirtyByte = null;
     let literals = [];
+
+    // State generation variables
+    let states = [];
+    let chunkIndex = 0;
+    let chunkStart = 0;
+    let curChunk = [];
+    let encodedChunk = null;
+    let special = false;
+    let saveRuns = 0;
+    
     for (let byte of inputArray) {
         // if in runs
         if (inRuns) {
             if (isRun(byte)) {
                 // if run encountered right after dirty byte, encode DB and previous runs
                 if (savedDirtyByte != null) {
-                    chunks.push(encodeSpecialChunk(numRuns, savedDirtyByte));
+                    encodedChunk = encodeSpecialChunk(numRuns, savedDirtyByte);
+                    chunks.push(encodedChunk);
+                    special = true;
+
+                    // reset saved dirty byte and run count
                     savedDirtyByte = null;
+                    saveRuns = numRuns;              
                     numRuns = 0;
                 }
                 numRuns++;
                 if (numRuns >= maxRuns) {
-                    chunks.push(encodeNormalChunk(numRuns, literals));
+                    encodedChunk = encodeNormalChunk(numRuns, literals);
+                    chunks.push(encodedChunk);
+                    special = false;
+                    
+                    // Reset run count and literals
+                    saveRuns = numRuns;
                     numRuns = 0;
                     literals  = [];
                 }
@@ -116,7 +144,10 @@ export const bbcCompress = (index) => {
         // if not in runs
         else {
             if (isRun(byte)) {
-                chunks.push(encodeNormalChunk(numRuns, literals));
+                encodedChunk = encodeNormalChunk(numRuns, literals);
+                chunks.push(encodedChunk);
+                special = false;
+                saveRuns = numRuns;
                 numRuns = 1;
                 literals = [];
                 inRuns = true;
@@ -124,20 +155,69 @@ export const bbcCompress = (index) => {
             else {
                 literals.push(byte);
                 if (literals.length >= maxLiterals) {
-                    chunks.push(encodeNormalChunk(numRuns, literals));
+                    encodedChunk = encodeNormalChunk(numRuns, literals);
+                    chunks.push(encodedChunk);
+                    special = false;
+                    saveRuns = numRuns;                   
                     numRuns = 0;
                     literals = [];
                     inRuns = true;
                 }
             }
         }
+
+        // Push the encoded chunk into the state array
+        //
+        // NOTE: We can also use the encodedChunk != null check to push chunks into the output
+        if(encodedChunk != null){
+            // Generate a state for this chunk, if we're supposed to
+            if(generate_states){
+                states.push({
+                    chunk: curChunk.join(" "),
+                    runs: saveRuns,
+                    special: special,
+                    startChunk: chunkStart,
+                    endChunk: chunkIndex,
+                    encodedChunk: uint8ArrayToStrings(encodedChunk).join(' '),
+                });
+                curChunk = [];
+                chunkStart = chunkIndex;
+            }
+            encodedChunk = null;
+        }
+
+        // Only keep track of chunk and index if we're generating states
+        if(generate_states){
+            curChunk.push(to8BitBinaryString(byte));
+            chunkIndex++;
+        }
     }
 
+    // If we're at the end of the input, encode the last chunk
     if (savedDirtyByte != null && inRuns) {
-        chunks.push(encodeSpecialChunk(numRuns, savedDirtyByte));
+        encodedChunk = encodeSpecialChunk(numRuns, savedDirtyByte);
+        chunks.push(encodedChunk);
+        special = true;
     }
     else if (literals.length > 0 || numRuns > 0) {
-        chunks.push(encodeNormalChunk(numRuns, literals));
+        encodedChunk = encodeNormalChunk(numRuns, literals);
+        chunks.push(encodedChunk);
+        special = false;
+    }
+
+    // Push the final encoded chunk into the state array if we're generating states
+    //
+    // NOTE: We can also use the encodedChunk != null check to push chunks into the output
+    if(encodedChunk != null && generate_states){
+        // Generate a state for this chunk, if we're supposed to
+        states.push({
+            chunk: curChunk.join(" "),
+            runs: numRuns,
+            special: special,
+            startChunk: chunkStart,
+            endChunk: chunkIndex,
+            encodedChunk: uint8ArrayToStrings(encodedChunk).join(' '),
+        });
     }
     
     // convert uint8 chunks into a string
@@ -146,5 +226,7 @@ export const bbcCompress = (index) => {
         // concat is slow; can optimize here.
         strs = strs.concat(uint8ArrayToStrings(c));
     }
+    if (generate_states) 
+        return states;
     return strs.join('');
 }

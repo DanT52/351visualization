@@ -1,32 +1,4 @@
-const getTypedArray = (wordSize, numChunks) => {
-    switch (wordSize) {
-        case 8:
-            return new Uint8Array(numChunks); // 1 byte per chunk
-        case 16:
-            return new Uint16Array(numChunks); // 2 bytes per chunk
-        case 32:
-            return new Uint32Array(numChunks); // 4 bytes per chunk
-        case 64:
-            return new BigInt64Array(numChunks); // 8 bytes per chunk
-        default:
-            throw new Error("Unsupported word size. Choose 8, 16, 32, or 64.");
-    }
-}
-
-const bitsToString = (bits, length, wordSize) => {
-    const asUnsigned = (num) => typeof num === "bigint" ? BigInt.asUintN(64, num) : num;
-    return Array.from(bits).slice(0, length).map(
-        num => asUnsigned(num).toString(2).padStart(wordSize, '0')
-    ).join('');
-}
-
-const getParse = (wordSize, scanLength) => wordSize > 32 ?
-    (str) => BigInt(("0b" + str)) << BigInt(scanLength - str.length) :
-    (str) => parseInt(str, 2) << (scanLength - str.length);
-
-const getCast = (wordSize) => wordSize > 32 ?
-    BigInt :
-    (x) => x;
+import { bitsToString, getTypedArray, getParse, getCast, wordAsString } from "./common.js";
 
 const getWahCompression = (numRuns, runOf, chunkarr, wordSize, compressed, index, cast) => {
     if (numRuns != 0) {
@@ -44,8 +16,6 @@ const getWahCompression = (numRuns, runOf, chunkarr, wordSize, compressed, index
     }
 
 }
-
-const asUnsigned = (num, wordSize) => typeof num === "bigint" ? BigInt.asUintN(wordSize, num) : num >>> 0;
 
 export const wahCompress = (string, wordSize, returnStates = false) => {
     let numChunks = Math.ceil(string.length / (wordSize - 1));
@@ -80,7 +50,7 @@ export const wahCompress = (string, wordSize, returnStates = false) => {
                         runs: Number(runOnes),
                         runType: '1',
                         startIndex: currentStartIndex,
-                        compressed: asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0'),
+                        compressed: wordAsString(compressed[index - 1], wordSize),
                     });
                 }
                 runOnes = cast(0);
@@ -97,7 +67,7 @@ export const wahCompress = (string, wordSize, returnStates = false) => {
                         runs: Number(runZeros),
                         runType: '0',
                         startIndex: currentStartIndex,
-                        compressed: asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0'),
+                        compressed: wordAsString(compressed[index - 1], wordSize),
                     });
                 }
                 runZeros = cast(0);
@@ -111,7 +81,7 @@ export const wahCompress = (string, wordSize, returnStates = false) => {
                         runs: Number(runZeros),
                         runType: '0',
                         startIndex: currentStartIndex,
-                        compressed: asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0'),
+                        compressed: wordAsString(compressed[index - 1], wordSize),
                     });
                 }
                 runZeros = cast(0);
@@ -128,7 +98,7 @@ export const wahCompress = (string, wordSize, returnStates = false) => {
                         runs: Number(runOnes),
                         runType: '1',
                         startIndex: currentStartIndex,
-                        compressed: asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0'),
+                        compressed: wordAsString(compressed[index - 1], wordSize),
                     });
                 }
                 runOnes = cast(0);
@@ -142,7 +112,7 @@ export const wahCompress = (string, wordSize, returnStates = false) => {
                         runs: Number(runOnes),
                         runType: '1',
                         startIndex: currentStartIndex,
-                        compressed: asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0'),
+                        compressed: wordAsString(compressed[index - 1], wordSize),
                     });
                 }
                 runOnes = cast(0);
@@ -153,7 +123,7 @@ export const wahCompress = (string, wordSize, returnStates = false) => {
                         runs: Number(runZeros),
                         runType: '0',
                         startIndex: currentStartIndex,
-                        compressed: asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0'),
+                        compressed: wordAsString(compressed[index - 1], wordSize),
                     });
                 }
                 runZeros = cast(0);
@@ -165,7 +135,7 @@ export const wahCompress = (string, wordSize, returnStates = false) => {
                     runs: 0,
                     runType: '',
                     startIndex: i,
-                    compressed: asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0'),
+                    compressed: wordAsString(compressed[index - 1], wordSize),
                 });
             }
             currentStartIndex = i + chunkSize;
@@ -179,7 +149,7 @@ export const wahCompress = (string, wordSize, returnStates = false) => {
                 runs: Number(runOnes),
                 runType: '1',
                 startIndex: currentStartIndex,
-                compressed: asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0'),
+                compressed: wordAsString(compressed[index - 1], wordSize),
             });
         }
     } else if (runZeros > 0) {//encode run of 0
@@ -189,7 +159,7 @@ export const wahCompress = (string, wordSize, returnStates = false) => {
                 runs: Number(runZeros),
                 runType: '0',
                 startIndex: currentStartIndex,
-                compressed: asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0'),
+                compressed: wordAsString(compressed[index - 1], wordSize),
             });
         }
     }

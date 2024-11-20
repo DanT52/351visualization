@@ -1,0 +1,23 @@
+/* Container to hold both text displays side by side */
+.comparison-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.diff-container {
+    width: 48%;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    overflow-wrap: break-word;
+}
+
+/* Highlight added text */
+.added {
+    background-color: #d4fcbc;
+}
+
+/* Highlight removed text */
+.removed {
+    background-color: #fbb6c2;
+}

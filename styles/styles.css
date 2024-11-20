@@ -99,18 +99,6 @@ input[type="number"] {
     margin-right: 0;
 }
 
-/* Diff Checker */
-.diff-container {
-    white-space: pre-wrap;
-    font-family: monospace;
-}
-.added {
-    background-color: #d4fcbc;
-}
-.removed {
-    background-color: #fbb6c2;
-}
-
 #animationCanvas {
     border: 2px solid rgb(88, 88, 88);
     width: 100%;
@@ -180,4 +168,56 @@ input[type="number"] {
 
 #compressedContent::-webkit-scrollbar-thumb:hover {
     background: #555;
+}
+
+.lines-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.line {
+    display: flex;
+    margin-bottom: 5px;
+}
+
+.line span {
+    width: 50%;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+
+.chunk1, .chunk2 {
+    width: 50%;
+}
+
+.diff {
+    background-color: #fdd; /* Light red background for lines with differences */
+}
+
+.detail-container {
+    margin-top: 20px;
+    padding: 10px;
+    border-top: 1px solid #ccc;
+}
+
+.detail-line {
+    display: flex;
+    flex-wrap: wrap;
+    font-family: monospace;
+    white-space: pre-wrap;
+    margin-bottom: 5px;
+}
+
+.detail-line span {
+    display: inline-block;
+}
+
+.highlight {
+    background-color: yellow;
+}
+
+.diff-input {
+    resize: none;
+    white-space: pre-wrap; 
+    word-wrap: break-word; 
 }

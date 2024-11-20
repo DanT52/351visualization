@@ -7,6 +7,7 @@
     <!-- Bootstrap CSS CDN -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="../styles/styles.css">
+    <link rel="stylesheet" href="../styles/diff_checker.css">
 </head>
 <body>
 
@@ -39,15 +40,25 @@
         <h1>Diff Checker</h1>
     </header>
 
+    <div class="form-group">
+        <label for="word-size">Word Size</label>
+        <select id="word-size">
+            <option value="4">4</option>
+            <option value="8" selected>8</option>
+            <option value="16">16</option>
+            <option value="32">32</option>
+        </select>
+    </div>
+
     <section class="container mt-4">
         <div class="row">
             <div class="col-md-6">
                 <h2>Input Text 1</h2>
-                <textarea id="text1" class="form-control" placeholder="Enter first text here" rows="10"></textarea>
+                <textarea id="text1" class="form-control diff-input" placeholder="Enter first text here" rows="10"></textarea>
             </div>
             <div class="col-md-6">
                 <h2>Input Text 2</h2>
-                <textarea id="text2" class="form-control" placeholder="Enter second text here" rows="10"></textarea>
+                <textarea id="text2" class="form-control diff-input" placeholder="Enter second text here" rows="10"></textarea>
             </div>
         </div>
         <div class="text-center mt-3">
@@ -57,6 +68,7 @@
             <!-- Differences displayed here -->
         </div>
     </section>
+
 
     <!-- Diff Library -->
     <script src="https://cdn.jsdelivr.net/npm/diff@latest/dist/diff.min.js"></script>

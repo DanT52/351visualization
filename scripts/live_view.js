@@ -1,32 +1,22 @@
 import { wahCompress, valCompress, bbcCompress } from './compression/raw_compression/compressions.js';
-
-const compressionSettings = {
-    compressionMethod: 'wah',
-    wordSize: 8,
-    numSegments: 2
-};
+import { getStoredCompressionSettings } from './storage.js';
 
 const wordSizeSegments = {
-    '8': ['1', '2', '4'],
-    '16': ['1', '2', '4', '8'],
-    '32': ['1', '2', '4', '8', '16'],
-    '64': ['1', '2', '4', '8', '16', '32'],
+    '8': ['1', '2'],
+    '16': ['1', '2', '4'],
+    '32': ['1', '2', '4', '8'],
+    '64': ['1', '2', '4', '8', '16'],
 };
 
 class CompressionSettingsManager {
     constructor(updateFunction) {
         // Load settings from localStorage if available
-        const savedSettings = JSON.parse(localStorage.getItem('compressionSettings'));
-        if (savedSettings) {
-            this.compressionSettings = savedSettings;
-        } else {
-            this.compressionSettings = compressionSettings;
-        }
+        this.compressionSettings = getStoredCompressionSettings();
 
         this.rows = document.querySelectorAll(".selection-row");
         this.compressionRow = document.querySelector("#compressionSelector");
         this.wordSizeRow = document.querySelector("#wordSizeSelector");
-        this.numSegmentRow = document.querySelector("#segmentSizeSelector");
+        this.numSegmentRow = document.querySelector("#segmentCountSelector");
         this.wahButton = document.querySelector("#wahButton");
         this.valButton = document.querySelector("#valButton");
         this.bbcButton = document.querySelector("#bbcButton");
@@ -70,8 +60,8 @@ class CompressionSettingsManager {
                 });
                 const wordSize = this.compressionSettings.wordSize.toString();
                 if (wordSizeSegments[wordSize]) {
-                    wordSizeSegments[wordSize].forEach(segmentSize => {
-                        const btn = [...segmentButtons].find(b => b.textContent == segmentSize);
+                    wordSizeSegments[wordSize].forEach(segmentCount => {
+                        const btn = [...segmentButtons].find(b => b.textContent == segmentCount);
                         if (btn) {
                             btn.style.display = 'flex';
                         }
@@ -119,9 +109,9 @@ class CompressionSettingsManager {
                     button.classList.remove('selected');
                     button.style.display = 'none';
                 });
-                wordSizeSegments[wordSize].forEach(segmentSize => {
+                wordSizeSegments[wordSize].forEach(segmentCount => {
                     const btn = [...this.numSegmentRow.querySelectorAll('.btn')]
-                        .find(b => b.textContent == segmentSize);
+                        .find(b => b.textContent == segmentCount);
                     if (btn) {
                         btn.style.display = 'flex';
                     }
@@ -198,8 +188,8 @@ class CompressionSettingsManager {
             });
             const wordSize = this.compressionSettings.wordSize.toString();
             if (wordSizeSegments[wordSize]) {
-                wordSizeSegments[wordSize].forEach(segmentSize => {
-                    const btn = [...segmentButtons].find(b => b.textContent == segmentSize);
+                wordSizeSegments[wordSize].forEach(segmentCount => {
+                    const btn = [...segmentButtons].find(b => b.textContent == segmentCount);
                     if (btn) {
                         btn.style.display = 'flex';
                     }
@@ -237,22 +227,29 @@ const outputField = document.getElementById('compressed-output');
 // Load saved input data from localStorage
 const savedInputData = localStorage.getItem('inputData');
 if (savedInputData !== null) {
-    inputField.value = savedInputData;
+    inputField.value = savedInputData
 }
 
 const updateOutputField = () => {
+    let toCompress = inputField.value;
+    if (inputField.value) {
+        toCompress = inputField.value.replace(/[^01]/g, '');
+    }
     const compressionMethod = compressionSettingsManager.compressionSettings.compressionMethod;
     const wordSize = compressionSettingsManager.compressionSettings.wordSize;
     const numSegments = compressionSettingsManager.compressionSettings.numSegments;
 
     if (compressionMethod == 'wah') {
-        outputField.value = wahCompress(inputField.value, wordSize).str;
+        outputField.value = wahCompress(toCompress, wordSize).str;
     }
     else if (compressionMethod == 'val') {
-        outputField.value = valCompress(inputField.value, wordSize, numSegments).str;
+        outputField.value = valCompress(toCompress, wordSize, numSegments).str;
     }
     else if (compressionMethod == 'bbc') {
-        outputField.value = bbcCompress(inputField.value);
+        // unpack output and states from bbc compression
+        console.log(toCompress);
+        let output = bbcCompress(toCompress);
+        outputField.value = output.match(/.{1,8}/g)?.join(' ') || output; // Regex optional
     }
 }
 
@@ -262,11 +259,16 @@ compressionSettingsManager.init();
 
 // Initial update of the output field
 updateOutputField();
+inputField.value = inputField.value.match(/.{1,8}/g)?.join(' ') || inputField.value;
 
-inputField.addEventListener('input', event => {
+inputField.addEventListener('input', event => { 
     // ensure only 1 and 0 are entered
     event.target.value = event.target.value.replace(/[^01]/g, '');
+
     // Save input data to localStorage
     localStorage.setItem('inputData', event.target.value);
     updateOutputField();
+
+    // Format the inputfield to have spaces between bytes
+    inputField.value = inputField.value.match(/.{1,8}/g)?.join(' ') || inputField.value;
 });

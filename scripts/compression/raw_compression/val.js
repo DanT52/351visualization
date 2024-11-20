@@ -1,51 +1,25 @@
-const bitsToString = (bits, length, wordSize) => {
-    const asUnsigned = (num) => typeof num === "bigint" ? BigInt.asUintN(64, num) : num;
-    return Array.from(bits).slice(0, length).map(
-        num => asUnsigned(num).toString(2).padStart(wordSize, '0')
-    ).join('');
-}
+import { bitsToString, getTypedArray, getParse, getCast, wordAsString } from "./common.js";
 
-
-const getTypedArray = (wordSize, numChunks) => {
-    switch (wordSize) {
-        case 8:
-            return new Uint8Array(numChunks); // 1 byte per chunk
-        case 16:
-            return new Uint16Array(numChunks); // 2 bytes per chunk
-        case 32:
-            return new Uint32Array(numChunks); // 4 bytes per chunk
-        case 64:
-            return new BigInt64Array(numChunks); // 8 bytes per chunk
-        default:
-            throw new Error("Unsupported word size. Choose 8, 16, 32, or 64.");
-    }
-}
-
-const getParse = (wordSize, scanLength) => wordSize > 32 ?
-    (str) => BigInt(("0b" + str)) << BigInt(scanLength - str.length) :
-    (str) => parseInt(str, 2) << (scanLength - str.length);
-
-const getCast = (wordSize) => wordSize > 32 ?
-    BigInt :
-    (x) => x;
-
-const getValSegmentLength = (wordSize, segmentCount) => {
+export const getValSegmentLength = (wordSize, segmentCount) => {
     const scanLength = (wordSize - segmentCount) / segmentCount;
     console.assert(scanLength == (scanLength | 0), "Word size does not divide cleanly by segment count!");
+    console.assert(scanLength > 1, "Segment size is too small!");
 
     return scanLength;
 }
 
-export const valCompress = (index, wordSize, segmentCount) => {
+export const valCompress = (index, wordSize, segmentCount, returnStates = false) => {
     const scanLength = getValSegmentLength(wordSize, segmentCount);
 
     const allSegmentsLength = segmentCount * scanLength;
 
+    const states = [];
     const output = getTypedArray(wordSize, Math.ceil(index.length / allSegmentsLength));
     const cast = getCast(wordSize);
     const parse = getParse(wordSize, scanLength);
 
     const maxValue = (cast(1) << cast(scanLength)) - cast(1);
+    const maxRunLength = (cast(1) << cast(scanLength - 1)) - cast(1);
 
     let defaultWord = cast(0);
 
@@ -58,6 +32,7 @@ export const valCompress = (index, wordSize, segmentCount) => {
     let runLength = 0;
     let runType = 0;
     let i = 0;
+    let startIndex = 0;
 
     let pendingWord = defaultWord;
     let pendingCount = 0;
@@ -65,6 +40,17 @@ export const valCompress = (index, wordSize, segmentCount) => {
     const outputRun = () => {
         ++pendingCount;
         pendingWord |= ((cast(runType) << cast(scanLength - 1)) | cast(runLength)) << cast((segmentCount - pendingCount) * scanLength);
+
+        if (returnStates) {
+            states.push({
+                runs: runLength,
+                runType: runType == 0 ? '0' : '1',
+                startIndex,
+                compressed: wordAsString(pendingWord, wordSize),
+            });
+        }
+
+        startIndex = i;
 
         flushPendingSegments();
     }
@@ -81,8 +67,9 @@ export const valCompress = (index, wordSize, segmentCount) => {
 
     const handleRun = (currentType) => {
         if (isInRun) {
-            if (runType != currentType) {
+            if (runType != currentType || runLength == maxRunLength) {
                 outputRun();
+                startIndex -= scanLength;
                 runLength = 1;
                 runType = currentType;
             } else {
@@ -112,6 +99,7 @@ export const valCompress = (index, wordSize, segmentCount) => {
             // Found a literal.
             if (isInRun) {
                 outputRun();
+                startIndex -= scanLength;
                 runLength = 0;
                 runType = 0;
                 isInRun = false;
@@ -120,6 +108,18 @@ export const valCompress = (index, wordSize, segmentCount) => {
             ++pendingCount;
             pendingWord &= ~(cast(1) << cast(wordSize - pendingCount));
             pendingWord |= nextBits << cast((segmentCount - pendingCount) * scanLength);
+
+            if (returnStates) {
+                states.push({
+                    runs: 0,
+                    runType: '0',
+                    startIndex,
+                    compressed: wordAsString(pendingWord, wordSize),
+                });
+            }
+
+            startIndex = i;
+
             flushPendingSegments();
         }
     }
@@ -130,7 +130,7 @@ export const valCompress = (index, wordSize, segmentCount) => {
 
     flushPendingSegments(true);
 
-    return {
+    return returnStates ? states : {
         compressed: output,
         length: outputIndex,
         str: bitsToString(output, outputIndex, wordSize),
