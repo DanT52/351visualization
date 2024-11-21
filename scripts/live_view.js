@@ -1,5 +1,6 @@
-import { wahCompress, valCompress, bbcCompress } from './compression/raw_compression/compressions.js';
+import { wahCompress, valCompress, bbcCompress, plwahCompress } from './compression/raw_compression/compressions.js';
 import { getStoredCompressionSettings } from './storage.js';
+
 
 const wordSizeSegments = {
     '8': ['1', '2'],
@@ -20,6 +21,7 @@ class CompressionSettingsManager {
         this.wahButton = document.querySelector("#wahButton");
         this.valButton = document.querySelector("#valButton");
         this.bbcButton = document.querySelector("#bbcButton");
+        this.plwahButton = document.querySelector("#plwahButton");
         if (typeof(updateFunction) == 'function') 
             this.updateFunction = updateFunction;
         else
@@ -80,6 +82,7 @@ class CompressionSettingsManager {
             this.wahButton.classList.remove('selected');
             this.valButton.classList.remove('selected');
             this.bbcButton.classList.remove('selected');
+            this.plwahButton.classList.remove('selected');
             // Add 'selected' class to the clicked button
             const clickedButton = document.querySelector(`#${type}Button`);
             if (clickedButton) {
@@ -97,6 +100,9 @@ class CompressionSettingsManager {
         });
         this.bbcButton.addEventListener("click", () => {
             compressionButtonClickAction('bbc');
+        });
+        this.plwahButton.addEventListener("click", () => {
+            compressionButtonClickAction('plwah');
         });
     }
 
@@ -160,6 +166,7 @@ class CompressionSettingsManager {
         this.wahButton.classList.remove('selected');
         this.valButton.classList.remove('selected');
         this.bbcButton.classList.remove('selected');
+        this.plwahButton.classList.remove('selected');
 
         // Restore compression method selection
         const compressionMethod = this.compressionSettings.compressionMethod;
@@ -250,6 +257,12 @@ const updateOutputField = () => {
         console.log(toCompress);
         let output = bbcCompress(toCompress);
         outputField.value = output.match(/.{1,8}/g)?.join(' ') || output; // Regex optional
+    }
+    else if (compressionMethod == 'plwah') {
+        outputField.value = plwahCompress(inputField.value, wordSize).str;
+    }
+    else if (compressionMethod == 'plwah') {
+        outputField.value = plwahCompress(inputField.value, wordSize).str;
     }
 }
 
