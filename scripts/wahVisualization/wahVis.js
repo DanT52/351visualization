@@ -310,9 +310,12 @@ class wahVis {
             runDescription = `${state.runs}`;
         }
 
-        if (state.runs === 0) {
+        if (state.dirtyPos){
+            this.stepDescriptionElement.innerText = `Adding dirty bit location ${state.dirtyPos} to the compressed output${segmentDescription}.`;
+        }
+        else if (state.runs === 0) {
             this.stepDescriptionElement.innerText = `Adding a literal to the compressed output${segmentDescription}.`;
-        } else {
+        }else {
             this.stepDescriptionElement.innerText = `Compressing ${runDescription} run${state.runs > 1 ? "s" : ""} of ${state.runType}s${segmentDescription}.`;
         }
     }
@@ -336,6 +339,7 @@ class wahVis {
     }
     
     isIndexIncludedInCompressed(index) {
+        if(this.states[index].dirtyPos) return false
         return (index % this.numSegments == this.numSegments - 1);
     }
 
