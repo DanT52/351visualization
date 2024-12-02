@@ -21,13 +21,14 @@ const getPlwahCompression = (numRuns, runOf, chunkarr, wordSize, compressed, ind
 
 }
 
-const getState  =  (runs, runOf, index, comp) =>{
-    return ({
-        runs:  runs,
-        runType:  runOf,
-        startIndex:  index,
-        compressed:  comp
-    })
+const getState  =  (runs, runOf, index, comp, dirtyPos) =>{
+    return {
+        runs: runs,
+        runType: runOf,
+        startIndex: index,
+        compressed: comp,
+        ...(dirtyPos !== undefined && { dirtyPos }),
+    };
 }
 
 const isDirty = (byte) =>{
@@ -85,7 +86,7 @@ export const plwahCompress = (string, wordSize, returnStates=false) => {
                 if (returnStates) {
                     states.push(getState(Number(runZeros), '0', currentStartIndex,asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0')))
                     if (dirtyBitLoc){
-                        states.push({runs: 0, runType: '',  compressed:asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0') , dirtyPos: dirtyBitLoc})
+                        states.push(getState(0, '', i, asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0'), dirtyBitLoc));
                     }
                 }
                 runZeros = (0);
@@ -98,7 +99,7 @@ export const plwahCompress = (string, wordSize, returnStates=false) => {
                 if (returnStates) {
                     states.push(getState(Number(runZeros), '0', currentStartIndex,asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0')))
                     if (dirtyBitLoc){
-                        states.push({runs: 0, runType: '',  compressed:asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0') , dirtyPos: dirtyBitLoc})
+                        states.push(getState(0,'', i, asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0') , dirtyBitLoc))
                     }
                 }
                 runZeros = (0);
@@ -116,9 +117,9 @@ export const plwahCompress = (string, wordSize, returnStates=false) => {
                 }
                 getPlwahCompression(runOnes, 1, null, wordSize, compressed, index++, numPositionBits,dirtyBitLoc );
                 if (returnStates) {
-                    states.push(getState(Number(runOnes), '1', currentStartIndex,asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0'),dirtyBitLoc))
+                    states.push(getState(Number(runOnes), '1', currentStartIndex, asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0')))
                     if (dirtyBitLoc){
-                        states.push({runs: 0, runType: '',  compressed:asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0') , dirtyPos: dirtyBitLoc})
+                        states.push(getState(0, '', i, asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0') ,dirtyBitLoc))
                     }
                 }
                 runOnes = (0);
@@ -131,9 +132,9 @@ export const plwahCompress = (string, wordSize, returnStates=false) => {
                 }
                 getPlwahCompression(runOnes, 1, null, wordSize, compressed, index++, numPositionBits, dirtyBitLoc );
                 if (returnStates) {
-                    states.push(getState(Number(runOnes), '1', currentStartIndex,asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0')), dirtyBitLoc)
+                    states.push(getState(Number(runOnes), '1', currentStartIndex,asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0')))
                     if (dirtyBitLoc){
-                        states.push({runs: 0, runType: '',  compressed:asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0') , dirtyPos: dirtyBitLoc})
+                        states.push(getState(0, '', i, asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0') ,  dirtyBitLoc))
                     }
                 }
                 runOnes = (0);
@@ -143,9 +144,9 @@ export const plwahCompress = (string, wordSize, returnStates=false) => {
                 }
                 getPlwahCompression(runZeros, 0, null, wordSize, compressed, index++, numPositionBits, dirtyBitLoc );
                 if (returnStates) {
-                    states.push(getState(Number(runZeros), '0', currentStartIndex,asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0'),dirtyBitLoc))
+                    states.push(getState(Number(runZeros), '0', currentStartIndex,asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0')))
                     if (dirtyBitLoc){
-                        states.push({runs: 0, runType: '',  compressed:asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0') , dirtyPos: dirtyBitLoc})
+                        states.push(getState(0, '', i, asUnsigned(compressed[index - 1], wordSize).toString(2).padStart(wordSize, '0') , dirtyBitLoc))
                     }
                 }
                 runZeros = (0);
@@ -181,13 +182,3 @@ export const plwahCompress = (string, wordSize, returnStates=false) => {
     };
 }
 
-
-// // let test = '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000'
-// let test='00000000000000000000000000000000000000000000000000000001'
-// // let test='00000000000000000000000000000000000000000000000000100000'
-
-// let result = plwahCompress(test, 8, true);
-//  result = plwahCompress(test, 16, true);
-//  result = plwahCompress(test, 32, true);
-//  result = plwahCompress(test, 64, true);
-// console.log(result)
