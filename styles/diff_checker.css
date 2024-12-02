@@ -1,3 +1,17 @@
+.diff-checker {
+    margin-top: 1rem;
+}
+
+.diff {
+    background-color: #fdd; /* Light red background for lines with differences */
+}
+
+.diff-input {
+    resize: none;
+    white-space: pre-wrap; 
+    word-wrap: break-word; 
+}
+
 /* Container to hold both text displays side by side */
 .comparison-container {
     display: flex;
@@ -20,4 +34,68 @@
 /* Highlight removed text */
 .removed {
     background-color: #fbb6c2;
+}
+
+.lines-container {
+    border: 1px solid #ccc;
+    padding: 10px;
+    max-height: 600px;
+    overflow-y: scroll;
+}
+
+.line {
+    display: flex;
+    padding: 5px 0;
+}
+
+.chunk1, .chunk2 {
+    width: 45%;
+    padding: 0 5px;
+}
+
+.line-number{
+    width: 10%;
+    padding: 0 5px;
+}
+.chunk1-header, .chunk2-header {
+    font-weight: bold;
+    width: 45%;
+    padding: 0 5px;
+}
+
+.line-number-header {
+    font-weight: bold;
+    width: 10%;
+    padding: 0 5px;
+
+}
+
+.detail-container {
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+.detail-line {
+    /* display: flex; */
+    /* flex-wrap: wrap; */
+    display: inline-block;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.highlight {
+    background-color: yellow;
+}
+
+.detail-line span {
+    display: inline-block; /* Ensure spans are treated as inline blocks */
+    text-align: center;    /* Align numbers properly */
+    width: 3ch;            /* Set width for consistent alignment (adjust based on number size) */
+    font-family: monospace; /* Use a fixed-width font */
+}
+
+.index-span {
+    font-weight: bold;
+    width: 3ch; /* Ensure consistent width with the number spans */
+    text-align: center;
 }

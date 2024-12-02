@@ -1,18 +1,20 @@
-import { bbcCompress } from "../compression/raw_compression/bbc.js";
+import { bbcCompress } from "../compression/bbc.js";
+import { numberToPlaceString } from '../visualization_common.js';
 
-// Easing function (ease-in-out)
 function easeInOutQuad(t) {
     return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 }
 
 class bbcVis {
-    constructor(canvasId, compressedContentId, uncompressed) {
+    constructor(canvasId, compressedContentId, stepDescriptionId, uncompressed) {
         // Get canvas and context
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
 
         // Get the output compressed content element
         this.outputText = document.getElementById(compressedContentId);
+
+        this.stepDescriptionElement = document.getElementById(stepDescriptionId);
 
         // Get uncompressed bits and states
         this.uncompressed = uncompressed.match(/.{1,8}/g) || uncompressed;
@@ -33,12 +35,26 @@ class bbcVis {
         this.canvas.style.height = `${canvasHeight}px`;
         this.ctx.scale(dpr, dpr);
 
+        // set the text color based on if we are in dark mode
+        this.textColor = getComputedStyle(document.body)
+                            .getPropertyValue('--text')
+                            .trim();
+
         // Initial draw
         this.drawCanvas(this.states[0]);
+        this.updateCompressedSoFar();
+    }
+
+    redrawCanvas() {
+        this.textColor = getComputedStyle(document.body)
+                            .getPropertyValue('--text')
+                            .trim();
+        this.drawCanvas(this.states[this.currentStateIndex], 0, this.stateStep);   
     }
 
     drawCanvas(state, transition = 0, curr_run = 1) {
-        
+        this.updateDescription(state, curr_run);
+
         // Get context, clear canvas
         const ctx = this.ctx;
         const canvasWidth = 600;
@@ -49,7 +65,7 @@ class bbcVis {
         {   
             // Configure font and get bit width
             ctx.font = `30px monospace`;
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = this.textColor;
             const bitWidth = ctx.measureText("0").width;
 
             // Dynamic start point based on transition (animation)
@@ -83,7 +99,7 @@ class bbcVis {
         {
             // Configure font and display text
             ctx.font = `22px Arial`;
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = this.textColor;
 
             // Display the number of runs (default)
             let runCount = curr_run + Math.floor(transition);
@@ -126,7 +142,7 @@ class bbcVis {
             }
         
             ctx.font = `bold 110px monospace`;
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = this.textColor;
             ctx.fillText(compressed, 0, 230);
         }
 
@@ -184,10 +200,31 @@ class bbcVis {
     
         // Add small text in the bottom right
         ctx.font = `bold 15px Arial`;
-        ctx.fillStyle = 'black';
+        ctx.fillStyle = this.textColor;
         ctx.fillText(`word : ${this.currentStateIndex + 1}`, canvasWidth - 100, canvasHeight - 10);
     }
-    
+
+    updateDescription(state, curr_run) {
+        if (curr_run > state.runs && state.special) {
+            const location = this.uncompressed[state.startChunk + curr_run - 1].indexOf(1);
+
+            this.stepDescriptionElement.innerText = `Compressing a dirty bit at location ${location} in the literal.`;
+        } else if (curr_run > state.runs && !state.special) {
+            const place = numberToPlaceString(curr_run - state.runs);
+
+            this.stepDescriptionElement.innerText = `Adding the ${place} literal to the compressed output.`;
+        } else {
+            let runDescription = "";
+
+            if (state.runs != curr_run) {
+                runDescription = `${curr_run} out of ${state.runs}`;
+            } else {
+                runDescription = `${state.runs}`;
+            }
+
+            this.stepDescriptionElement.innerText = `Compressing ${runDescription} run${state.runs > 1 ? "s" : ""} of 0s.`;
+        }
+    }
 
     updateCompressedSoFar(lastElement = false) {
         let compressedSoFar = [];

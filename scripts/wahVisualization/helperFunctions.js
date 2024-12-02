@@ -52,3 +52,45 @@ export const drawArrow = (ctx, fromX, fromY, toX, toY, headLength = 10) => {
     );
     ctx.stroke();
 }
+
+
+export const insertSpaceEveryNChars = (inputString, digit) => {
+    let result = '';
+    for (let i = 0; i < inputString.length; i++) {
+        result += inputString[i];
+        if ((i + 1) % digit === 0 && i !== inputString.length - 1) {
+            result += ' ';
+        }
+    }
+    return result;
+};
+
+
+export const updateStartIndices = (states, litSize) => {
+    let adjustedIndex = 0; // Tracks the adjusted start index including spaces
+
+    for (let i = 0; i < states.length; i++) {
+        const state = states[i];
+        const { runs, runType, startIndex } = state;
+
+        // Calculate the number of characters in the current state's uncompressed chunk
+        const uncompressedLength = runs === 0 ? litSize : litSize * runs;
+
+        // Calculate spaces added by `insertSpaceEveryNChars`
+        const spacesAdded = Math.floor(uncompressedLength / litSize); // Spaces per group of litSize digits
+
+        // Update the state's startIndex
+        state.startIndex = adjustedIndex;
+
+      
+        adjustedIndex += uncompressedLength + spacesAdded;
+        
+    }
+
+    return states;
+};
+
+
+export const easeInOutQuad = (t) => {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+};

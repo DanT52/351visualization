@@ -1,0 +1,71 @@
+.controls {
+    display: flex;
+    justify-content: space-between;
+}
+
+.visualization {
+    background-color: var(--background-50);
+    margin-bottom: 1rem;
+    padding: 1rem;
+    min-height: 400px;
+}
+
+@media (max-width: 767.98px) {
+    #animationCanvas {
+        max-height: 200px;
+        min-height: 200px;
+        max-width: 400px;
+    }
+    .visualization {
+        min-height: 300px;
+    }
+}
+
+textarea {
+    resize: none;
+}
+
+#animationInstructionText {
+    color: grey;
+}
+
+#compressedSoFar {
+    margin-top: 20px;
+    font-size: 18px;
+}
+
+/* Compressed Content Container */
+#compressedContent {
+    width: 100%;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    white-space: nowrap;
+    padding: 10px;
+    color: var(--text);
+    background-color: var(--background-50);
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 10px;
+    height: 50px;
+    scrollbar-width: auto;  /* For Firefox */
+    scrollbar-color: #888 #f1f1f1;  /* For Firefox */
+}
+
+/* Webkit scrollbar styles (Chrome, Safari, Edge) */
+#compressedContent::-webkit-scrollbar {
+    height: 12px;
+}
+
+#compressedContent::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 6px;
+}
+
+#compressedContent::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 6px;
+}
+
+#compressedContent::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
