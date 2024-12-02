@@ -3,7 +3,7 @@ import { simplifyString, decimalToBinary, drawArrow, insertSpaceEveryNChars, upd
 import { numberToPlaceString } from '../visualization_common.js';
 
 class wahVis {
-    constructor(canvasId, compressedContentId, stepDescriptionId, states, wordSize, litSize, numSegments, uncompressed) {
+    constructor(canvasId, compressedContentId, stepDescriptionId, states, wordSize, litSize, numSegments, uncompressed, dirtySegmentBits) {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
         this.compressedContentElement = document.getElementById(compressedContentId);
@@ -14,6 +14,7 @@ class wahVis {
         this.wordSize = wordSize;
         this.litSize = litSize;
         this.numSegments = numSegments;
+        this.dirtySegmentBits = dirtySegmentBits;
         this.segmentLength = getValSegmentLength(wordSize, numSegments);
 
         this.currentStateIndex = 0;
@@ -118,12 +119,22 @@ class wahVis {
         // Highlight around current step
         ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
         ctx.fillRect(highlightStart, 30, highlightWidth, 40);
-    
-
+        
+        let top_text;
+        if(state.dirtyPos){
+            top_text = `Dirty Bit Location: ${state.dirtyPos}`
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+            ctx.fillRect(highlightStart + (state.dirtyPos-1) * uncompressedDigitWidth, 30, uncompressedDigitWidth, 40);
+        }else if (state.runs >0){
+            top_text = `${curr_run} runs of ${state.runType}'s`
+        } else{
+            top_text = 'Literal'
+        }
+        
         // Subtext
         ctx.font = `22px Arial`;
         ctx.fillStyle = this.textColor;
-        let top_text = state.runs === 0 ? 'Literal' : `${curr_run} runs of ${state.runType}'s`;
+        
         ctx.fillText(top_text, 20, 100);
     
         // Compressed Display
@@ -161,6 +172,7 @@ class wahVis {
 
         const runColor = "red";
         const runTypeColor = "blue";
+        const dirtyBitColor = "green"
         const litColor = this.textColor
         
 
@@ -178,10 +190,13 @@ class wahVis {
         
         const segmentIndex = stateIndex % this.numSegments;
         const segmentWidth = this.segmentLength * bitWidth;
+        const dirtySegmentWidth =  this.dirtySegmentBits * bitWidth;
         const headerOffset = segmentIndex * bitWidth;
-        const segmentOffset = segmentIndex * segmentWidth + this.numSegments * bitWidth;
+        const segmentOffset = segmentIndex * segmentWidth + this.numSegments * bitWidth ;
+        const dirtyBitOffset = this.dirtySegmentBits !=0 ? 100 : 0;
 
-        if (state.runs > 0) {
+
+        if (state.runs > 0 || state.dirtyPos)  {
             // Underline first bit
             ctx.strokeStyle = runColor;
             ctx.lineWidth = 4;
@@ -210,7 +225,7 @@ class wahVis {
             ctx.lineTo(segmentOffset + bitWidth - gap, underlineH);
             ctx.stroke();
 
-            const secondBitText = `of ${state.runType}'s`;
+            const secondBitText = state.dirtyPos ? `of ${ this.states[stateIndex-1].runType}'s` :`of ${state.runType}'s`;
 
             ctx.fillText(secondBitText, 60, textH);
 
@@ -218,21 +233,38 @@ class wahVis {
 
             drawArrow(ctx, 60 + middleSecondText, textH - 20, segmentOffset + bitWidth/2 - gap, underlineH+5, 10);
 
-    
+            
+            if(this.dirtySegmentBits){
+                ctx.strokeStyle = dirtyBitColor;
+                ctx.fillStyle = dirtyBitColor;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(segmentOffset + bitWidth + gap , underlineH);
+                ctx.lineTo(segmentOffset + dirtySegmentWidth + bitWidth - gap, underlineH);
+                ctx.stroke();
+
+                const dirtyBitText = `dirty bit location`;
+                ctx.fillText(dirtyBitText, 140, textH);
+                
+                const middleDirtyBitText = ctx.measureText(dirtyBitText).width / 2;
+                drawArrow(ctx, 140 + middleDirtyBitText, textH-20, segmentOffset + bitWidth+ dirtySegmentWidth/2 , underlineH+5, 10);
+            }
+
             // Underline rest of the string
             ctx.strokeStyle = litColor;
             ctx.fillStyle = litColor;
             ctx.lineWidth = 4;
             ctx.beginPath();
-            ctx.moveTo(segmentOffset + bitWidth + gap, underlineH);
+            ctx.moveTo(segmentOffset + bitWidth + dirtySegmentWidth + gap, underlineH);
             ctx.lineTo(segmentOffset + segmentWidth - gap, underlineH);
             ctx.stroke();
 
-            const restText = `${curr_run} ${curr_run > 1 ? 'times' : 'time'}`;
-            ctx.fillText(restText, 260, textH);
+            const runs = state.dirtyPos ? this.states[stateIndex - 1].runs : curr_run;
+            const restText = `${runs} ${runs === 1 ? 'time' : 'times'}`;
+            ctx.fillText(restText, 260+dirtyBitOffset, textH);
 
             const middleRestText = ctx.measureText(restText).width / 2;
-            drawArrow(ctx, 260 + middleRestText, textH-20, segmentOffset + bitWidth + (segmentWidth - bitWidth) / 2, underlineH+5, 10);
+            drawArrow(ctx, 260 + middleRestText + dirtyBitOffset, textH-20, segmentOffset + bitWidth +dirtySegmentWidth+ (segmentWidth -dirtySegmentWidth - bitWidth) / 2, underlineH+5, 10);
     
         } else {
             // Literal

@@ -176,7 +176,7 @@ export class AnimSettingsManager {
         this.wahButton.classList.remove('active');
         this.valButton.classList.remove('active');
         this.bbcButton.classList.remove('active');
-        this.plwahButton.classList.remove('selected');
+        this.plwahButton.classList.remove('active');
 
         // Restore compression method selection
         const compressionMethod = this.getSettings().compressionMethod;
