@@ -280,9 +280,10 @@ class wahVis {
         }
     
         // Add small text in the bottom right that says current word we are on
-        ctx.font = `bold 15px Arial`;
+        ctx.font = `bold 20px Arial`;
         ctx.fillStyle = this.textColor;
-        ctx.fillText(`word : ${Math.ceil((this.currentStateIndex + 1) / this.numSegments)}`, canvasWidth - 100, canvasHeight - 10);
+        const numDirtySegments = this.states.slice(0, this.currentStateIndex+1).filter(x => x.dirtyPos).length; 
+        ctx.fillText(`word : ${Math.ceil((this.currentStateIndex + 1) / this.numSegments) - numDirtySegments}`, canvasWidth - 100, canvasHeight - 10);
     }
 
     updateDescription(stateIndex, curr_run) {
@@ -339,8 +340,7 @@ class wahVis {
     }
     
     isIndexIncludedInCompressed(index) {
-        if(this.states[index].dirtyPos) return false
-        return (index % this.numSegments == this.numSegments - 1);
+        return (this.states[index].dirtyPos) ? false : (index % this.numSegments == this.numSegments - 1);
     }
 
     updateCompressedSoFar(lastElement = false) {
