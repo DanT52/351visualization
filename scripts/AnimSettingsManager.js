@@ -20,6 +20,7 @@ export class AnimSettingsManager {
         this.wahButton = document.querySelector("#wahButton");
         this.valButton = document.querySelector("#valButton");
         this.bbcButton = document.querySelector("#bbcButton");
+        this.plwahButton = document.querySelector("#plwahButton");
         this.updateFunction = typeof updateFunction === 'function' ? updateFunction : () => {};
 
         this.init();
@@ -80,6 +81,7 @@ export class AnimSettingsManager {
             this.wahButton.classList.remove('active');
             this.valButton.classList.remove('active');
             this.bbcButton.classList.remove('active');
+            this.plwahButton.classList.remove('active');
             // Add 'active' class to the clicked button
             const clickedButton = document.querySelector(`#${type}Button`);
             if (clickedButton) {
@@ -97,6 +99,9 @@ export class AnimSettingsManager {
         });
         this.bbcButton.addEventListener("click", () => {
             compressionButtonClickAction('bbc');
+        });
+        this.plwahButton.addEventListener("click", () => {
+            compressionButtonClickAction('plwah');
         });
     }
 
@@ -171,6 +176,7 @@ export class AnimSettingsManager {
         this.wahButton.classList.remove('active');
         this.valButton.classList.remove('active');
         this.bbcButton.classList.remove('active');
+        this.plwahButton.classList.remove('active');
 
         // Restore compression method selection
         const compressionMethod = this.getSettings().compressionMethod;

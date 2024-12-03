@@ -3,6 +3,7 @@ import bbcVis from './bbcVisualization/bbcVis.js';
 import { wahCompress } from '../scripts/compression/wah.js';
 import { valCompress, getValSegmentLength } from './compression/val.js';
 import { bbcCompress } from './compression/bbc.js';
+import { plwahCompress } from './compression/plwah.js';
 import { AnimSettingsManager } from './AnimSettingsManager.js'
 
 const compressedContent = document.getElementById('compressedContent');
@@ -22,6 +23,11 @@ function compress(inputBitstring, settings, getStates) {
                 return valCompress(inputBitstring, settings.wordSize, settings.numSegments, true);
             else
                 return valCompress(inputBitstring, settings.wordSize, settings.numSegments).str;
+        case 'plwah':
+            if (getStates)
+                return plwahCompress(inputBitstring, settings.wordSize, true);
+            else
+                return plwahCompress(inputBitstring, settings.wordSize).str;
         case 'bbc':
             if (getStates)
                 return bbcCompress(inputBitstring, true);
@@ -113,10 +119,14 @@ function initAnimation(inputBitstring, settings) {
     const wordSize = settings.wordSize;
     let litSize = wordSize - 1;
     let numSegments = 1;
+    let dirtySegmentBits = 0;
 
     if (settings.compressionMethod === 'val') {
         litSize = getValSegmentLength(wordSize, settings.numSegments);
         numSegments = settings.numSegments;
+    }
+    else if (settings.compressionMethod === 'plwah') {
+        dirtySegmentBits =  Math.log2(wordSize);
     }
 
     // old test const uncompressed = '010100100000000000000000000011111111111111111111111111111110101';
@@ -125,7 +135,7 @@ function initAnimation(inputBitstring, settings) {
         visualizer = new bbcVis(canvasId, compressedContentId, stepDescriptionId, inputBitstring);
     }
     else{
-        visualizer = new wahVis(canvasId, compressedContentId, stepDescriptionId, states, wordSize, litSize, numSegments, inputBitstring);
+        visualizer = new wahVis(canvasId, compressedContentId, stepDescriptionId, states, wordSize, litSize, numSegments, inputBitstring, dirtySegmentBits);
     }
 
     animationControls.setClickAction(visualizer);
@@ -150,6 +160,7 @@ function addSpacesToInput(input, settings) {
             break;
         case 'wah':
         case 'val':
+        case 'plwah':
             input = input.match(new RegExp(`.{1,${settings.wordSize-1}}`, 'g'))?.join(' ') 
                 || input;
             break;
@@ -164,6 +175,7 @@ function addSpacesToOutput(compressedString, settings) {
             output = output.match(/.{1,8}/g)?.join(' ') || output; // Regex optional
             break;
         case 'wah':
+        case 'plwah':
         case 'val':
             output = output.match(new RegExp(`.{1,${settings.wordSize}}`, 'g'))?.join(' ') || output;
             break;

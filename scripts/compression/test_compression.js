@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import { bbcCompress } from './bbc.js';
 import { wahCompress } from './wah.js';
 import { valCompress, valDecompress } from './val.js';
+import { plwahCompress } from './plwah.js'
 
 const diffStrings = (expected, actual) => {
     const seekBefore = 20;
@@ -167,6 +168,56 @@ const testVAL = () => {
     }
 }
 
+const testPLWAH= () =>{
+    const plwahTests = [
+        ["", "", 16, 2, "empty string"],
+        ['0'.repeat(7*7) + '000100', '10100111', 8, '8 - max run 0s + dirty bit'],
+        ['1'.repeat(7*7) + '1110111', '11100111', 8, '8 -max run 1s + dirty bit'],
+        ['0'.repeat(7*7) + '000110', '1000011100001100', 8, '8 - max run 0s + literal'],
+        ['0'.repeat(7*5) + '0000100', '10101101', 8, '8 - 5 runs + dirty'],
+        ['0'.repeat(7*5) + '1110001', '1000010101110001', 8, '8 - 5 runs + literal'],
+
+        // ['0'.repeat(15*1023) + '000000010000000', '1010001111111111', 16, '16 - max run 0s + dirty bit'],
+        // ['1'.repeat(15*1023) + '111111101111111', '1110001111111111', 16, '16 - max run 1s + dirty bit'],
+        // ['1'.repeat(15*511) + '0' + '1'.repeat(14), '1100010111111111', 16, '16 - 511 run 1s + dirty bit'],
+
+        // ['1'.repeat(31*2) + '0' + '1'.repeat(30), '1100001' + '0'.repeat(23) + '10', 32, '32 - 2 run 1s + dirty bit'],
+        // ['1'.repeat(31*2) + '0'.repeat(31), '1100000' + '0'.repeat(23) + '10' + '10', 32, '32 - 2 run 1s + run 0'],
+        
+        // ['1'.repeat(63*2) + '0'.repeat(31), '1100000' + '0'.repeat(23) + '10' + '10', 32, '32 - 511 run 1s + dirty bit'],
+        
+        ['1'.repeat(7)  + '0' + '1'.repeat(6),  '11'+'001'      + '0'.repeat(3)  + '1', 8, '8 - run of 1s'],
+        ['1'.repeat(15) + '0' + '1'.repeat(14), '11'+'0001'     + '0'.repeat(9)  + '1', 16, '16 - run of 1s'],
+        ['1'.repeat(31) + '0' + '1'.repeat(30), '11'+'00001'    + '0'.repeat(25) + '1', 32, '32 - run of 1s'],
+        ['1'.repeat(63) + '0' + '1'.repeat(62), '11'+'000001'   + '0'.repeat(56) + '1', 64, '64 - run of 1s'],
+    ]
+    let manualTestInc =0
+    for (const [input, expectedOutput, wordSize, testName] of plwahTests) {
+        manualTestInc++;
+        const compressed = plwahCompress(input, wordSize);
+        if (!diffStrings(expectedOutput, compressed.str)) {
+            console.log(`\n failed manual test ${manualTestInc}: ${testName}.`);
+            return;
+        }
+        console.log(`passed manual test ${manualTestInc}: ${testName}`);
+    }
+    // for (const [inputFile, wordSize, segmentCount] of valTestFiles) {
+    //     let colNum = 0;
+    //     for (let col of getColumns(fs.readFileSync(inputFile, 'utf8'))) {
+    //         colNum++;
+    //         const compressed = valCompress(col, wordSize, segmentCount);
+    //         const decompressed = valDecompress(compressed, wordSize, segmentCount, col.length);
+    //         if (!diffStrings(col, decompressed.str)) {
+    //             console.log("\n" + inputFile + ` (${wordSize}): failed to compress column ${colNum} correctly`);
+    //             return;
+    //         }
+    //     }
+    //     console.log(inputFile + ": passed all columns");
+    // }
+}
+
+
+testPLWAH();
 testBBC();
 testWAH();
 testVAL();
