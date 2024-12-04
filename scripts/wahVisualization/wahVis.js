@@ -395,9 +395,9 @@ class wahVis {
         // If currently on a literal and the next state is a run, micro step through to the end of that run
         if (fromState.runs === 0 && this.currentStateIndex < this.states.length - 1 && this.states[this.currentStateIndex + 1].runs > 0) {
             const nextState = this.states[this.currentStateIndex + 1];
-            totalMicroSteps = nextState.runs;
+            totalMicroSteps = 1; // 1 because we want to stop on the first run of this run state
             targetStateIndex = this.currentStateIndex + 1;
-            targetRun = nextState.runs;
+            targetRun = 1;
         }
 
         // if we are in the middle of a run state
@@ -408,11 +408,17 @@ class wahVis {
         // if we are at the end of a state
         } else if (this.currentStateIndex < this.states.length - 1) {
             const nextState = this.states[this.currentStateIndex + 1];
-            if (nextState.runs > 0) { // next state is also a run
-                totalMicroSteps = nextState.runs;
+            if (nextState.runs > 0) { // next state is also a run so stop on the first run.
+                totalMicroSteps = 1;
+                targetRun = 1;
+                targetStateIndex++;
+            } else {
+                targetStateIndex++;
+                // need to still go to the target state .runs for val
+                targetRun = this.states[targetStateIndex].runs;
             }
-            targetStateIndex++;
-            targetRun = this.states[targetStateIndex].runs;
+            
+            
         }
 
         requestAnimationFrame(this.animate(fromStateIndex, fromRun, performance.now(), totalMicroSteps, targetStateIndex, targetRun).bind(this));
