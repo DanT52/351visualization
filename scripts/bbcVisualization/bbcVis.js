@@ -127,11 +127,12 @@ class bbcVis {
         // Compressed Test Display
         {   
             let compressed;
+
             if (curr_run > state.runs && state.special) {
                 compressed = state.encodedChunk.split(" ")[0];
             }
             else{
-                compressed = Math.min(curr_run + Math.floor(transition), 7).toString(2).padStart(3, '0') + "0";
+                compressed = Math.min(curr_run + Math.floor(transition), 7, state.runs).toString(2).padStart(3, '0') + "0";
                 
                 if (curr_run > state.runs){
                     compressed += Math.min(curr_run - state.runs + Math.floor(transition), 15).toString(2).padStart(4, '0');
@@ -152,14 +153,14 @@ class bbcVis {
 
         // Header bit
         // Underline first bit
-        ctx.strokeStyle = '#FF69B4';
+        ctx.strokeStyle = 'red';
         ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.moveTo(gap, 240);
         ctx.lineTo(3 * bitWidth - gap, 240);
         ctx.stroke();
         ctx.font = `bold 20px Arial`;
-        ctx.fillStyle = '#FF69B4';
+        ctx.fillStyle = 'red';
         let runCount = curr_run + Math.floor(transition);
         ctx.fillText(`${runCount <= 6 ? Math.min(runCount, state.runs) : '6+'} runs of 0`, bitWidth + gap, 270);
 
@@ -175,25 +176,25 @@ class bbcVis {
             ctx.fillText(`spec?`, gap + bitWidth * 3, 270);
             
             // Underline rest of the string
-            ctx.strokeStyle = 'green';
+            ctx.strokeStyle = 'black';
             ctx.lineWidth = 4;
             ctx.beginPath();
             ctx.moveTo(bitWidth * 4 + gap, 240);
             ctx.lineTo(compressedWidth - gap, 240);
             ctx.stroke();
-            ctx.fillStyle = 'green';
+            ctx.fillStyle = 'black';
             ctx.fillText(`DB location/ # of literals`, 4 * bitWidth + gap * 2, 270);
     
         }
         else if (curr_run > state.runs && !state.special) {
             // Literal
-            ctx.strokeStyle = 'green';
+            ctx.strokeStyle = 'black';
             ctx.lineWidth = 4;
             ctx.beginPath();
             ctx.moveTo(bitWidth*3 + gap, 240);
             ctx.lineTo(compressedWidth - gap, 240);
             ctx.stroke();
-            ctx.fillStyle = 'green';
+            ctx.fillStyle = 'black';
             let litCount = curr_run - state.runs + Math.floor(transition)
             ctx.fillText(`${litCount} literal${litCount > 1 ? 's' : ''}`, 3 * bitWidth + gap * 2, 270);
         }
