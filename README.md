@@ -1,3 +1,3 @@
 # 351visualization
 
-[Link to github pages](https://dant52.github.io/351visualization/pages/home.html)
+[Link to uptpdate version](https://benmccamish.github.io/bitmapvisualization/pages/home.html)
